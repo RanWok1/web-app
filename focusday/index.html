@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <title>FocusDay — Ruang Produktivitas</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#" aria-label="FocusDay beranda">
+        <span class="brand-mark">F</span>
+        <span>Focus<span class="accent">Day</span><small>Ruang produktivitasmu</small></span>
+      </a>
+      <nav class="side-nav" aria-label="Navigasi utama">
+        <button class="nav-item active" data-view="dashboard"><span>⌂</span> Dashboard</button>
+        <button class="nav-item" data-view="tasks"><span>✓</span> Tugas</button>
+        <button class="nav-item" data-view="notes"><span>▤</span> Catatan</button>
+        <button class="nav-item" data-view="habits"><span>↗</span> Habit tracker</button>
+        <button class="nav-item" data-view="progress"><span>▥</span> Progress</button>
+        <button class="nav-item" data-view="reminders"><span>◷</span> Pengingat</button>
+        <button class="nav-item" data-view="settings"><span>⚙</span> Data & backup</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <span class="status-dot"></span>
+        Data tersimpan di perangkat ini
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="today-label">RUANG PRODUKTIVITAS</p>
+          <h1 id="page-title">Dashboard</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-button" id="quick-add" aria-label="Tambah tugas" title="Tambah tugas">＋</button>
+          <div class="avatar" aria-hidden="true">FD</div>
+        </div>
+      </header>
+
+      <div id="app-view" aria-live="polite"></div>
+      <footer class="app-footer">FocusDay <span>•</span> Sedikit demi sedikit, tetap bergerak.</footer>
+    </main>
+  </div>
+
+  <nav class="mobile-nav" aria-label="Navigasi mobile">
+    <button class="mobile-nav-item active" data-view="dashboard"><span>⌂</span><small>Home</small></button>
+    <button class="mobile-nav-item" data-view="tasks"><span>✓</span><small>Tugas</small></button>
+    <button class="mobile-nav-item" data-view="notes"><span>▤</span><small>Catatan</small></button>
+    <button class="mobile-nav-item" data-view="habits"><span>↗</span><small>Habit</small></button>
+    <button class="mobile-nav-item" data-view="progress"><span>▥</span><small>Progress</small></button>
+    <button class="mobile-nav-item" data-view="reminders"><span>◷</span><small>Reminder</small></button>
+  </nav>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <dialog id="task-dialog" class="modal">
+    <form id="task-form" class="modal-card">
+      <div class="modal-heading">
+        <div><p class="eyebrow">TASK MANAGER</p><h2 id="task-dialog-title">Tambah tugas</h2></div>
+        <button type="button" class="icon-button close-dialog" aria-label="Tutup">×</button>
+      </div>
+      <input type="hidden" id="task-id">
+      <label>Nama tugas<input id="task-title" maxlength="120" required placeholder="Contoh: Belajar Java 30 menit"></label>
+      <div class="form-grid">
+        <label>Kategori
+          <select id="task-category">
+            <option>Sekolah</option><option>Belajar</option><option>Pribadi</option><option>Kerja</option><option>Lainnya</option>
+          </select>
+        </label>
+        <label>Prioritas
+          <select id="task-priority">
+            <option value="medium">Sedang</option><option value="high">Tinggi</option><option value="low">Rendah</option>
+          </select>
+        </label>
+      </div>
+      <label>Tenggat waktu (opsional)<input id="task-due" type="datetime-local"></label>
+      <label>Waktu pengingat (opsional)<input id="task-reminder" type="datetime-local"></label>
+      <p class="helper-text">Pengingat diperiksa saat FocusDay sedang terbuka. Notifikasi browser membutuhkan izin.</p>
+      <div class="modal-actions"><button type="button" class="button secondary close-dialog">Batal</button><button type="submit" class="button primary">Simpan tugas</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="note-dialog" class="modal">
+    <form id="note-form" class="modal-card">
+      <div class="modal-heading">
+        <div><p class="eyebrow">CATATAN</p><h2 id="note-dialog-title">Catatan baru</h2></div>
+        <button type="button" class="icon-button close-dialog" aria-label="Tutup">×</button>
+      </div>
+      <input type="hidden" id="note-id">
+      <label>Judul<input id="note-title" maxlength="120" required placeholder="Judul catatan"></label>
+      <label>Isi catatan<textarea id="note-body" rows="7" required placeholder="Tulis ide atau hal yang ingin kamu ingat..."></textarea></label>
+      <label class="checkbox-label"><input type="checkbox" id="note-pinned"> Sematkan catatan ini</label>
+      <div class="modal-actions"><button type="button" class="button secondary close-dialog">Batal</button><button type="submit" class="button primary">Simpan catatan</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="habit-dialog" class="modal">
+    <form id="habit-form" class="modal-card">
+      <div class="modal-heading">
+        <div><p class="eyebrow">HABIT TRACKER</p><h2 id="habit-dialog-title">Kebiasaan baru</h2></div>
+        <button type="button" class="icon-button close-dialog" aria-label="Tutup">×</button>
+      </div>
+      <input type="hidden" id="habit-id">
+      <label>Nama kebiasaan<input id="habit-title" maxlength="80" required placeholder="Contoh: Belajar coding"></label>
+      <div class="form-grid">
+        <label>Emoji<input id="habit-emoji" maxlength="8" placeholder="📚"></label>
+        <label>Kategori<select id="habit-category"><option>Belajar</option><option>Produktivitas</option><option>Kesehatan</option><option>Pribadi</option><option>Lainnya</option></select></label>
+      </div>
+      <label>Target kecil (opsional)<input id="habit-target" maxlength="80" placeholder="Contoh: 20 menit"></label>
+      <label>Jadwal mingguan</label>
+      <div class="weekday-checks">
+        <label><input type="checkbox" name="habit-day" value="1" checked> Sen</label>
+        <label><input type="checkbox" name="habit-day" value="2" checked> Sel</label>
+        <label><input type="checkbox" name="habit-day" value="3" checked> Rab</label>
+        <label><input type="checkbox" name="habit-day" value="4" checked> Kam</label>
+        <label><input type="checkbox" name="habit-day" value="5" checked> Jum</label>
+        <label><input type="checkbox" name="habit-day" value="6"> Sab</label>
+        <label><input type="checkbox" name="habit-day" value="0"> Min</label>
+      </div>
+      <p class="helper-text">Centang hari saat kebiasaan ini dijadwalkan. Riwayat check-in akan tetap tersimpan.</p>
+      <div class="modal-actions"><button type="button" class="button secondary close-dialog">Batal</button><button type="submit" class="button primary">Simpan kebiasaan</button></div>
+    </form>
+  </dialog>
+</body>
+</html>
