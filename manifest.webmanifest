@@ -1,0 +1,16 @@
+{
+  "id": "./",
+  "name": "FocusDay — Ruang Produktivitas",
+  "short_name": "FocusDay",
+  "description": "Ruang produktivitas untuk tugas, catatan, dan kebiasaan.",
+  "lang": "id",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080e19",
+  "theme_color": "#0b1220",
+  "icons": [
+    { "src": "./icons/focusday.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
