@@ -1,4 +1,4 @@
-const CACHE_NAME = "focusday-shell-v1";
+const CACHE_NAME = "focusday-shell-v2";
 const APP_SHELL = ["./", "./index.html", "./style.css", "./app.js", "./manifest.webmanifest", "./icons/focusday.svg"];
 
 self.addEventListener("install", (event) => {
