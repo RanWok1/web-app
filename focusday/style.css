@@ -186,3 +186,7 @@ h3 { font-size: 14px; margin-bottom: 5px; }
   .mobile-nav::-webkit-scrollbar { display: none; }
   .mobile-nav-item { flex: 1 0 52px; }
 }
+
+
+/* Tombol centang dan pencatat waktu tugas */
+.task-check-button{flex:0 0 28px;width:28px;height:28px;min-width:28px;padding:0;border:2px solid #60758e;border-radius:8px;background:#0b1422;color:#071a20;font-size:17px;font-weight:800;display:grid;place-items:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent}.task-check-button.checked{background:var(--cyan);border-color:var(--cyan)}.task-timer{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:9px;border-top:1px solid #26364b}.task-timer-info{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.task-timer-info strong{font:700 13px Manrope,sans-serif;color:var(--cyan);font-variant-numeric:tabular-nums}.task-timer-info small{font-size:9px;color:var(--muted)}.task-timer-actions{display:flex;gap:6px;flex-wrap:wrap}.task-timer-actions .button{touch-action:manipulation}
