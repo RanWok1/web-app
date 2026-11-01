@@ -73,11 +73,23 @@ function bestStreak(h){
  while(d<=end){const k=todayKey(d);if((h.days||[0,1,2,3,4,5,6]).includes(d.getDay())){if(checks.has(k)){run++;best=Math.max(best,run)}else run=0;}d.setDate(d.getDate()+1);}return best;
 }
 function bestAll(){return data.habits.reduce((m,h)=>Math.max(m,bestStreak(h)),0);}
-function taskRow(t,actions=false){
- const p={high:"Tinggi",medium:"Sedang",low:"Rendah"}[t.priority]||"Sedang";
- return `<div class="task-row"><input class="task-check" type="checkbox" data-action="toggle-task" data-id="${esc(t.id)}" ${t.done?"checked":""} aria-label="Tandai selesai"><div class="task-main"><div class="task-title ${t.done?"done":""}">${esc(t.title)}</div><div class="task-meta"><span>${esc(t.category||"Lainnya")}</span><span>•</span><span>${t.dueAt?esc(fmtDate(t.dueAt,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})):"Tanpa tenggat"}</span><span class="pill ${esc(t.priority||"medium")}">${p}</span></div></div>${actions?`<div class="card-actions"><button class="mini-action" data-action="edit-task" data-id="${esc(t.id)}">Edit</button><button class="mini-action" data-action="delete-task" data-id="${esc(t.id)}">Hapus</button></div>`:""}</div>`;
-}
-function habitCard(h){
+function formatDuration(ms){
+  const total=Math.max(0,Math.floor(ms/1000)),h=Math.floor(total/3600),m=Math.floor(total%3600/60),s=total%60;
+  return [h,m,s].map(v=>String(v).padStart(2,"0")).join(":");
+ }
+ function taskElapsedMs(t){
+  return Math.max(0,Number(t.timeSpentMs)||0)+Math.max(0,Number(t.timerAccumulatedMs)||0)+(t.timerStartedAt?Math.max(0,Date.now()-new Date(t.timerStartedAt).getTime()):0);
+ }
+ function taskTimerMarkup(t){
+  const running=!!t.timerStartedAt,paused=(Number(t.timerAccumulatedMs)||0)>0;
+  const action=running?"timer-pause":"timer-start",label=running?"Jeda":paused?"Lanjutkan":"Mulai mengerjakan";
+  return `<div class="task-timer"><div class="task-timer-info"><strong data-task-timer="${esc(t.id)}">${formatDuration(taskElapsedMs(t))}</strong><small>Total: ${formatDuration(Number(t.timeSpentMs)||0)}</small></div><div class="task-timer-actions"><button class="button secondary small" data-action="${action}" data-id="${esc(t.id)}">${label}</button>${paused||running?`<button class="button secondary small" data-action="timer-finish" data-id="${esc(t.id)}">Selesaikan sesi</button>`:""}</div></div>`;
+ }
+ function taskRow(t,actions=false){
+  const p={high:"Tinggi",medium:"Sedang",low:"Rendah"}[t.priority]||"Sedang";
+  return `<div class="task-row"><button type="button" class="task-check-button ${t.done?"checked":""}" data-action="toggle-task" data-id="${esc(t.id)}" aria-pressed="${!!t.done}" aria-label="${t.done?"Batalkan tugas selesai":"Tandai tugas selesai"}">${t.done?"✓":""}</button><div class="task-main"><div class="task-title ${t.done?"done":""}">${esc(t.title)}</div><div class="task-meta"><span>${esc(t.category||"Lainnya")}</span><span>•</span><span>${t.dueAt?esc(fmtDate(t.dueAt,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})):"Tanpa tenggat"}</span><span class="pill ${esc(t.priority||"medium")}">${p}</span></div>${taskTimerMarkup(t)}</div>${actions?`<div class="card-actions"><button class="mini-action" data-action="edit-task" data-id="${esc(t.id)}">Edit</button><button class="mini-action" data-action="delete-task" data-id="${esc(t.id)}">Hapus</button></div>`:""}</div>`;
+ }
+ function habitCard(h){
  const done=habitDone(h), checks=new Set(h.checks||[]), recent=[];
  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=todayKey(d);recent.push({key:k,label:DAYS[d.getDay()],done:checks.has(k)});}
  return `<article class="habit-card"><div class="habit-emoji">${esc(h.emoji||"✦")}</div><div class="habit-info"><h3 class="${done?"done":""}">${esc(h.title)}</h3><p>${esc(h.category||"Pribadi")}${h.target?" · "+esc(h.target):""}</p><p class="habit-sub">Jadwal: ${esc((h.days||[0,1,2,3,4,5,6]).map(d=>DAYS[d]).join(", "))}</p><div class="week-dots">${recent.map(d=>`<span class="week-dot ${d.done?"checked":""}" title="${d.key}: ${d.done?"selesai":"belum selesai"}">${d.label.slice(0,1)}</span>`).join("")}</div><p class="habit-sub">🔥 Streak ${streak(h)} hari · Best ${bestStreak(h)} · ${h.checks.length} check-in</p><div class="habit-actions"><button class="button ${done?"secondary":"primary"}" data-action="toggle-habit" data-id="${esc(h.id)}">${done?"✓ Selesai hari ini":"Tandai selesai"}</button><button class="mini-action" data-action="edit-habit" data-id="${esc(h.id)}">Edit</button><button class="mini-action" data-action="delete-habit" data-id="${esc(h.id)}">Hapus</button></div></div></article>`;
@@ -177,8 +189,23 @@ function saveHabit(event){
  const h={id:id||makeId(),title,emoji:$("#habit-emoji").value.trim()||"✦",category:$("#habit-category").value,target:$("#habit-target").value.trim(),days,checks:prev?.checks||[],createdAt:prev?.createdAt||new Date().toISOString()};
  data.habits=id?data.habits.map(x=>x.id===id?h:x):[...data.habits,h];saveData();closeDialogs();showToast(id?"Kebiasaan diperbarui.":"Kebiasaan ditambahkan.");render();
 }
-function toggleTask(id,checked){data.tasks=data.tasks.map(t=>t.id===id?{...t,done:checked,completedAt:checked?new Date().toISOString():""}:t);saveData();render();}
-function toggleHabit(id,checked){const today=todayKey();data.habits=data.habits.map(h=>{if(h.id!==id)return h;const set=new Set(h.checks||[]);checked?set.add(today):set.delete(today);return {...h,checks:[...set].sort()};});saveData();render();}
+function toggleTask(id){const t=data.tasks.find(x=>x.id===id);if(!t)return;t.done=!t.done;t.completedAt=t.done?new Date().toISOString():"";saveData();render();}
+ function controlTaskTimer(id,action){
+  const t=data.tasks.find(x=>x.id===id);if(!t)return;const now=new Date().toISOString();
+  if(action==="timer-start"){
+   const other=data.tasks.find(x=>x.id!==id&&x.timerStartedAt);
+   if(other){showToast("Selesaikan atau jeda timer tugas lain dulu.");return;}
+   t.timerStartedAt=now;saveData();showToast("Timer pengerjaan dimulai.");
+  }else if(action==="timer-pause"){
+   t.timerAccumulatedMs=(Number(t.timerAccumulatedMs)||0)+Math.max(0,Date.now()-new Date(t.timerStartedAt).getTime());t.timerStartedAt=null;saveData();showToast("Timer dijeda.");
+  }else if(action==="timer-finish"){
+   const duration=Math.max(0,Number(t.timerAccumulatedMs)||0)+(t.timerStartedAt?Math.max(0,Date.now()-new Date(t.timerStartedAt).getTime()):0);
+   if(duration>0){t.timeSessions=Array.isArray(t.timeSessions)?t.timeSessions:[];t.timeSessions.push({durationMs:duration,endedAt:now});t.timeSpentMs=(Number(t.timeSpentMs)||0)+duration;}
+   t.timerStartedAt=null;t.timerAccumulatedMs=0;saveData();showToast(duration?"Sesi tersimpan ke total waktu tugas.":"Belum ada waktu yang tercatat.");
+  }
+  render();
+ }
+ function updateTaskTimers(){document.querySelectorAll("[data-task-timer]").forEach(el=>{const t=data.tasks.find(x=>x.id===el.dataset.taskTimer);if(t)el.textContent=formatDuration(taskElapsedMs(t));});}function toggleHabit(id,checked){const today=todayKey();data.habits=data.habits.map(h=>{if(h.id!==id)return h;const set=new Set(h.checks||[]);checked?set.add(today):set.delete(today);return {...h,checks:[...set].sort()};});saveData();render();}
 function deleteItem(type,id){
  const labels={task:"tugas",note:"catatan",habit:"kebiasaan"};if(!confirm(`Hapus ${labels[type]} ini?`))return;
  if(type==="task")data.tasks=data.tasks.filter(x=>x.id!==id);if(type==="note")data.notes=data.notes.filter(x=>x.id!==id);if(type==="habit")data.habits=data.habits.filter(x=>x.id!==id);
@@ -257,7 +284,7 @@ async function signOutCloud(){
  const {error}=await cloud.auth.signOut();if(error){showToast("Gagal keluar: "+error.message);return;}cloudUser=null;updateCloudStatus("Keluar dari akun cloud. Data lokal tetap tersedia.");showToast("Berhasil keluar.");
 }
 function handleAction(a,id,value){
- if(a==="add-task")openTaskForm();if(a==="edit-task"){const t=data.tasks.find(x=>x.id===id);if(t)openTaskForm(t);}if(a==="delete-task")deleteItem("task",id);
+ if(a==="add-task")openTaskForm();if(a==="edit-task"){const t=data.tasks.find(x=>x.id===id);if(t)openTaskForm(t);}if(a==="delete-task")deleteItem("task",id);if(a==="toggle-task")toggleTask(id);if(a==="timer-start"||a==="timer-pause"||a==="timer-finish")controlTaskTimer(id,a);
  if(a==="add-note")openNoteForm();if(a==="edit-note"){const n=data.notes.find(x=>x.id===id);if(n)openNoteForm(n);}if(a==="delete-note")deleteItem("note",id);
  if(a==="add-habit")openHabitForm();if(a==="edit-habit"){const h=data.habits.find(x=>x.id===id);if(h)openHabitForm(h);}if(a==="delete-habit")deleteItem("habit",id);
  if(a==="toggle-habit"){const h=data.habits.find(x=>x.id===id);if(h)toggleHabit(id,value===undefined?!habitDone(h):value);}
@@ -283,5 +310,5 @@ document.querySelectorAll(".close-dialog").forEach(b=>b.addEventListener("click"
 $("#quick-add").addEventListener("click",()=>openTaskForm());
 document.addEventListener("click",e=>{if(e.target.matches("#cloud-auth button"))return;});
 $("#today-label").textContent=new Intl.DateTimeFormat("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date()).toUpperCase();
-render();setInterval(checkReminders,15000);checkReminders();
+render();setInterval(checkReminders,15000);setInterval(updateTaskTimers,1000);checkReminders();
 window.addEventListener("online",()=>{if(cloudUser)syncToCloud(false);});
