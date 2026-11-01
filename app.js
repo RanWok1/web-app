@@ -260,7 +260,7 @@ function handleAction(a,id,value){
  if(a==="add-task")openTaskForm();if(a==="edit-task"){const t=data.tasks.find(x=>x.id===id);if(t)openTaskForm(t);}if(a==="delete-task")deleteItem("task",id);
  if(a==="add-note")openNoteForm();if(a==="edit-note"){const n=data.notes.find(x=>x.id===id);if(n)openNoteForm(n);}if(a==="delete-note")deleteItem("note",id);
  if(a==="add-habit")openHabitForm();if(a==="edit-habit"){const h=data.habits.find(x=>x.id===id);if(h)openHabitForm(h);}if(a==="delete-habit")deleteItem("habit",id);
- if(a==="toggle-task")toggleTask(id,value);if(a==="toggle-habit"){const h=data.habits.find(x=>x.id===id);if(h)toggleHabit(id,value===undefined?!habitDone(h):value);}
+ if(a==="toggle-habit"){const h=data.habits.find(x=>x.id===id);if(h)toggleHabit(id,value===undefined?!habitDone(h):value);}
  if(a==="task-filter"){taskFilter=value;renderTasks();}if(a==="habit-filter"){habitFilter=value;renderHabits();}
  if(a==="habit-history"){const p=$("#habit-history-panel");if(p)p.hidden=!p.hidden;}
  if(a==="export")exportBackup();if(a==="import")$("#import-file")?.click();if(a==="enable-notifications")enableNotifications();
